@@ -98,7 +98,7 @@ $(document).ready(function () {
   else $("#search-filter-text").show();
   setShowColumnInfoDialog();
   timeChart();
-});
+}); 
 
 const tags = document.getElementById("tags");
 const tagSecond = document.getElementById("tags-second");
