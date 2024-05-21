@@ -98,7 +98,79 @@ $(document).ready(function () {
   else $("#search-filter-text").show();
   setShowColumnInfoDialog();
   timeChart();
-}); 
+
+});
+
+  // Function to update logs display with new data
+  /* function updateLogsDisplay(data) {
+      $('#logs-table-body').empty();  // Clear existing data
+  
+      // Append new rows
+      data.forEach(row => {
+          // Assuming 'row' is an object where each property can be accessed as needed
+          $('#logs-table-body').append(`<tr>${Object.values(row).map(cell => `<td>${cell}</td>`).join('')}</tr>`);
+      });
+  }
+  
+  // Existing code for pagination and fetching logs
+  let currentPage = 1;
+  let rowsPerPage = 10000; // Default to 'ALL'
+  
+  function fetchLogs() {
+      const data = {
+          searchText: $("#query-input").val() || '*',
+          startEpoch: previousStartEpoch,
+          endEpoch: previousEndEpoch,
+          indexName: previousIndexName,
+          page: currentPage,
+          size: rowsPerPage,
+          queryLanguage: "Splunk QL",
+      };
+  
+      $.ajax({
+          method: "POST",
+          url: "api/search/",
+          contentType: "application/json",
+          data: JSON.stringify(data),
+          success: function(response) {
+            console.log("Server response:", response);
+            if (response.hits && response.hits.records) {
+                updateLogsDisplay(response.hits.records); // Use the records from the response
+                $('#page-number').text(`Page ${currentPage}`);
+                $('#total-pages').text(`of ${Math.ceil(response.hits.totalMatched.value / rowsPerPage)}`);
+            } else {
+                console.error("Logs data not found in response");
+            }
+          },
+          error: function(error) {
+              console.log("Error fetching data:", error);
+          }
+      });
+  }
+  
+  // Handlers for pagination controls
+  $('#rows-number-options .rows-number-option').click(function() {
+      let selectedSize = $(this).text();
+      rowsPerPage = selectedSize === 'ALL' ? 10000 : parseInt(selectedSize, 10);  // Assuming 'ALL' means 10000
+      currentPage = 1;  // Reset to the first page
+      fetchLogs();
+  });
+  
+  $('#next-page-btn').click(function() {
+      currentPage += 1;
+      fetchLogs();
+  });
+  
+  $('#prev-page-btn').click(function() {
+      if (currentPage > 1) {
+          currentPage -= 1;
+          fetchLogs();
+      }
+  });
+  
+  // Initial fetch of logs
+  fetchLogs();
+});  */
 
 const tags = document.getElementById("tags");
 const tagSecond = document.getElementById("tags-second");

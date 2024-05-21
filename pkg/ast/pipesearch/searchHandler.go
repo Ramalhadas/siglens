@@ -79,19 +79,17 @@ func ParseSearchBody(jsonSource map[string]interface{}, nowTs uint64) (string, u
 		case string:
 			indexName = val
 		case []string:
-			indexName = strings.Join(val[:], ",")
+			indexName = strings.Join(val, ",")
 		case []interface{}:
-
-			valLen := len(val)
-			indexName = ""
-			for idx, indVal := range val {
-				if idx == valLen-1 {
-					indexName += fmt.Sprintf("%v", indVal)
+			var indices []string
+			for _, v := range val {
+				if str, ok := v.(string); ok {
+					indices = append(indices, str)
 				} else {
-					indexName += fmt.Sprintf("%v,", indVal)
+					log.Errorf("Invalid type for index element: %T", v)
 				}
 			}
-
+			indexName = strings.Join(indices, ",")
 		default:
 			log.Errorf("parseSearchBody indexName is not a string! Val %+v, type: %T", val, iText)
 		}
@@ -173,39 +171,48 @@ func ParseSearchBody(jsonSource map[string]interface{}, nowTs uint64) (string, u
 		}
 	}
 
-	scroll, ok := jsonSource["from"]
-	if !ok || scroll == nil {
-		scrollFrom = 0
-	} else {
-		switch val := scroll.(type) {
-		case json.Number:
-			temp, _ := val.Int64()
-			scrollFrom = int(temp)
-		case float64:
-			scrollFrom = int(val)
-		case int64:
-			scrollFrom = int(val)
-		case uint64:
-			scrollFrom = int(val)
-		case int32:
-			scrollFrom = int(val)
-		case uint32:
-			scrollFrom = int(val)
-		case int16:
-			scrollFrom = int(val)
-		case uint16:
-			scrollFrom = int(val)
-		case int8:
-			scrollFrom = int(val)
-		case uint8:
-			scrollFrom = int(val)
-		case int:
-			scrollFrom = val
-		default:
-			log.Infof("parseSearchBody: unknown type for scroll=%T", val)
-			scrollFrom = 0
-		}
-	}
+	// Parsing 'from' or calculating from 'page'
+    from, fromOk := jsonSource["from"]
+    if fromOk && from != nil {
+        switch val := from.(type) {
+        case float64:
+            scrollFrom = int(val)
+        case int64:
+            scrollFrom = int(val)
+        case uint64:
+            scrollFrom = int(val)
+        case int32:
+            scrollFrom = int(val)
+        case uint32:
+            scrollFrom = int(val)
+        case int16:
+            scrollFrom = int(val)
+        case uint16:
+            scrollFrom = int(val)
+        case int8:
+            scrollFrom = int(val)
+        case uint8:
+            scrollFrom = int(val)
+        case int:
+            scrollFrom = val
+        default:
+            log.Errorf("parseSearchBody: unknown type for 'from'=%T", val)
+            scrollFrom = 0
+        }
+    } else {
+        // If 'from' is not provided, use 'page' to calculate it
+        page, pageOk := jsonSource["page"]
+        if pageOk {
+            pageNum, err := strconv.Atoi(fmt.Sprintf("%v", page))
+            if err != nil {
+                log.Errorf("Error converting page to int: %v", err)
+                pageNum = 1  // Default to the first page if there is an error
+            }
+            scrollFrom = (pageNum - 1) * int(finalSize)
+        } else {
+            scrollFrom = 0  // Default to the first page if 'page' not specified
+        }
+    }
 	finalSize = finalSize + uint64(scrollFrom)
 
 	return searchText, startEpoch, endEpoch, finalSize, indexName, scrollFrom

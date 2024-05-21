@@ -52,6 +52,19 @@
 #rows-number-btn{
     margin-left: 5px;
 }
+
+#pagination-controls{
+    position: absolute;
+    left: 405px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    height: 30px;
+    top: 5px;
+    border-radius: 5px;
+    background-color: var(--myOrg-input);
+}
+
 #filter-container {
     margin: 0;
     margin-top: 10px;
@@ -408,7 +421,7 @@ input.form-control {
     position: absolute;
     top: 5px;
     left: 335px;
-    width: 120px;
+    width: 80px;
 }
 
 .tab-li {
@@ -582,9 +595,19 @@ a:visited.ui-button,
     border: 1px solid var(--border-btn-color);
 }
 
+.next-page-btn, .prev-page-btn{
+    background-color: var(--index-drop-down-box-bg-color);
+    height: 30px;
+    border: 1px solid var(--border-btn-color);
+    color: var(--text-color);
+}
+
 .fields{
     margin-left: 10px;
 }
+
+.next-page-btn:hover,
+.prev-page-btn:hover,
 .below-btn-img:hover,
 .add-con:hover,
 .cancel-enter:hover,
@@ -692,13 +715,26 @@ div.show-record-popup {
     width: 120px;
 }
 
-#logs-view-controls {
+#page-number{
     position: absolute;
-    left: 450px;
+    font-size: 17px; 
+    height: 20px;
+    top: 5px;
+    left: 520px;
     display: flex;
     justify-content: space-between;
     flex-direction: row;
-    width: calc(100% - 450px);
+    align-items: center;
+    width: 60px;
+}
+
+#logs-view-controls {
+    position: absolute;
+    left: 550px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    width: calc(100% - 550px);
 }
 #tabs-chart,
 #showTable{
