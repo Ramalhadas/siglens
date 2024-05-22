@@ -56,122 +56,123 @@ Example incomingBody
 finalSize = size + from
 */
 func ParseSearchBody(jsonSource map[string]interface{}, nowTs uint64) (string, uint64, uint64, uint64, string, int) {
-	var searchText, indexName string
-	var startEpoch, endEpoch, finalSize uint64
-	var scrollFrom int
-	sText, ok := jsonSource["searchText"]
-	if !ok || sText == "" {
-		searchText = "*"
-	} else {
-		switch val := sText.(type) {
-		case string:
-			searchText = val
-		default:
-			log.Errorf("parseSearchBody searchText is not a string! Val %+v", val)
-		}
-	}
+    var searchText, indexName string
+    var startEpoch, endEpoch, finalSize uint64
+    var scrollFrom int
 
-	iText, ok := jsonSource["indexName"]
-	if !ok || iText == "" {
-		indexName = "*"
-	} else {
-		switch val := iText.(type) {
-		case string:
-			indexName = val
-		case []string:
-			indexName = strings.Join(val, ",")
-		case []interface{}:
-			var indices []string
-			for _, v := range val {
-				if str, ok := v.(string); ok {
-					indices = append(indices, str)
-				} else {
-					log.Errorf("Invalid type for index element: %T", v)
-				}
-			}
-			indexName = strings.Join(indices, ",")
-		default:
-			log.Errorf("parseSearchBody indexName is not a string! Val %+v, type: %T", val, iText)
-		}
-	}
+    sText, ok := jsonSource["searchText"]
+    if !ok || sText == "" {
+        searchText = "*"
+    } else {
+        switch val := sText.(type) {
+        case string:
+            searchText = val
+        default:
+            log.Errorf("parseSearchBody searchText is not a string! Val %+v", val)
+        }
+    }
 
-	startE, ok := jsonSource["startEpoch"]
-	if !ok || startE == nil {
-		startEpoch = nowTs - (15 * 60 * 1000)
-	} else {
-		switch val := startE.(type) {
-		case json.Number:
-			temp, _ := val.Int64()
-			startEpoch = uint64(temp)
-		case float64:
-			startEpoch = uint64(val)
-		case int64:
-			startEpoch = uint64(val)
-		case uint64:
-			startEpoch = uint64(val)
-		case string:
-			defValue := nowTs - (15 * 60 * 1000)
-			startEpoch = parseAlphaNumTime(nowTs, string(val), defValue)
-		default:
-			startEpoch = nowTs - (15 * 60 * 1000)
-		}
-	}
+    iText, ok := jsonSource["indexName"]
+    if (!ok || iText == "") {
+        indexName = "*"
+    } else {
+        switch val := iText.(type) {
+        case string:
+            indexName = val
+        case []string:
+            indexName = strings.Join(val, ",")
+        case []interface{}:
+            var indices []string
+            for _, v := range val {
+                if str, ok := v.(string); ok {
+                    indices = append(indices, str)
+                } else {
+                    log.Errorf("Invalid type for index element: %T", v)
+                }
+            }
+            indexName = strings.Join(indices, ",")
+        default:
+            log.Errorf("parseSearchBody indexName is not a string! Val %+v, type: %T", val, iText)
+        }
+    }
 
-	endE, ok := jsonSource["endEpoch"]
-	if !ok || endE == nil {
-		endEpoch = nowTs
-	} else {
-		switch val := endE.(type) {
-		case json.Number:
-			temp, _ := val.Int64()
-			endEpoch = uint64(temp)
-		case float64:
-			endEpoch = uint64(val)
-		case int64:
-			endEpoch = uint64(val)
-		case uint64:
-			endEpoch = uint64(val)
-		case string:
-			endEpoch = parseAlphaNumTime(nowTs, string(val), nowTs)
-		default:
-			endEpoch = nowTs
-		}
-	}
+    startE, ok := jsonSource["startEpoch"]
+    if !ok || startE == nil {
+        startEpoch = nowTs - (15 * 60 * 1000)
+    } else {
+        switch val := startE.(type) {
+        case json.Number:
+            temp, _ := val.Int64()
+            startEpoch = uint64(temp)
+        case float64:
+            startEpoch = uint64(val)
+        case int64:
+            startEpoch = uint64(val)
+        case uint64:
+            startEpoch = uint64(val)
+        case string:
+            defValue := nowTs - (15 * 60 * 1000)
+            startEpoch = parseAlphaNumTime(nowTs, string(val), defValue)
+        default:
+            startEpoch = nowTs - (15 * 60 * 1000)
+        }
+    }
 
-	size, ok := jsonSource["size"]
-	if !ok || size == 0 {
-		finalSize = uint64(100)
-	} else {
-		switch val := size.(type) {
-		case json.Number:
-			temp, _ := val.Int64()
-			finalSize = uint64(temp)
-		case float64:
-			finalSize = uint64(val)
-		case int64:
-			finalSize = uint64(val)
-		case uint64:
-			finalSize = uint64(val)
-		case int32:
-			finalSize = uint64(val)
-		case uint32:
-			finalSize = uint64(val)
-		case int16:
-			finalSize = uint64(val)
-		case uint16:
-			finalSize = uint64(val)
-		case int8:
-			finalSize = uint64(val)
-		case uint8:
-			finalSize = uint64(val)
-		case int:
-			finalSize = uint64(val)
-		default:
-			finalSize = uint64(100)
-		}
-	}
+    endE, ok := jsonSource["endEpoch"]
+    if !ok || endE == nil {
+        endEpoch = nowTs
+    } else {
+        switch val := endE.(type) {
+        case json.Number:
+            temp, _ := val.Int64()
+            endEpoch = uint64(temp)
+        case float64:
+            endEpoch = uint64(val)
+        case int64:
+            endEpoch = uint64(val)
+        case uint64:
+            endEpoch = uint64(val)
+        case string:
+            endEpoch = parseAlphaNumTime(nowTs, string(val), nowTs)
+        default:
+            endEpoch = nowTs
+        }
+    }
 
-	// Parsing 'from' or calculating from 'page'
+    size, ok := jsonSource["size"]
+    if !ok || size == 0 {
+        finalSize = uint64(100)
+    } else {
+        switch val := size.(type) {
+        case json.Number:
+            temp, _ := val.Int64()
+            finalSize = uint64(temp)
+        case float64:
+            finalSize = uint64(val)
+        case int64:
+            finalSize = uint64(val)
+        case uint64:
+            finalSize = uint64(val)
+        case int32:
+            finalSize = uint64(val)
+        case uint32:
+            finalSize = uint64(val)
+        case int16:
+            finalSize = uint64(val)
+        case uint16:
+            finalSize = uint64(val)
+        case int8:
+            finalSize = uint64(val)
+        case uint8:
+            finalSize = uint64(val)
+        case int:
+            finalSize = uint64(val)
+        default:
+            finalSize = uint64(100)
+        }
+    }
+
+    // Parsing 'from' or calculating from 'page'
     from, fromOk := jsonSource["from"]
     if fromOk && from != nil {
         switch val := from.(type) {
@@ -213,9 +214,15 @@ func ParseSearchBody(jsonSource map[string]interface{}, nowTs uint64) (string, u
             scrollFrom = 0  // Default to the first page if 'page' not specified
         }
     }
-	finalSize = finalSize + uint64(scrollFrom)
 
-	return searchText, startEpoch, endEpoch, finalSize, indexName, scrollFrom
+    // finalSize = size + from
+    finalSize = finalSize + uint64(scrollFrom)
+
+    // Log the final parameters
+    log.Infof("Parsed search body: searchText=%s, startEpoch=%d, endEpoch=%d, finalSize=%d, indexName=%s, scrollFrom=%d",
+        searchText, startEpoch, endEpoch, finalSize, indexName, scrollFrom)
+
+    return searchText, startEpoch, endEpoch, finalSize, indexName, scrollFrom
 }
 
 func ProcessAlertsPipeSearchRequest(queryParams alertutils.QueryParams) int {
@@ -539,6 +546,7 @@ func convertQueryCountToTotalResponse(qc *structs.QueryCount) interface{} {
 func parseAlphaNumTime(nowTs uint64, inp string, defValue uint64) uint64 {
 
 	sanTime := strings.ReplaceAll(inp, " ", "")
+	nowPrefix := "now-"
 
 	if sanTime == "now" {
 		return nowTs
@@ -547,13 +555,23 @@ func parseAlphaNumTime(nowTs uint64, inp string, defValue uint64) uint64 {
 	retVal := defValue
 
 	strln := len(sanTime)
-	if strln < 6 {
-		return retVal
+	if strln < len(nowPrefix)+2 {
+		return defValue
 	}
 
+	// check for prefix 'now-' in the input string
+	if !strings.HasPrefix(sanTime, nowPrefix) {
+		return defValue
+	}
+
+	// check for invalid time units
 	unit := sanTime[strln-1]
-	num, err := strconv.ParseInt(sanTime[4:strln-1], 0, 64)
-	if err != nil {
+	if unit != 'm' && unit != 'h' && unit != 'd' {
+		return defValue
+	}
+
+	num, err := strconv.ParseInt(sanTime[len(nowPrefix):strln-1], 10, 64)
+	if err != nil || num < 0 {
 		return defValue
 	}
 

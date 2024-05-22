@@ -840,7 +840,7 @@ body {
 }
 
 #query-language-btn.active .dropdown-arrow.orange,
-#rows-number-btn.active .dropdown-arrow.orange, 
+#rows-number-btn.active .dropdown-arrow.orange,
 #alert-btn.active .dropdown-arrow.orange,
 #index-btn.active .dropdown-arrow.orange,
 #date-picker-btn.active .dropdown-arrow.orange,
@@ -1713,7 +1713,7 @@ div.dts div.dataTables_scrollBody table {
     border: 1px solid var(--timepicker-border-color);
 }
 
-.index-dropdown-item,.alert-dropdown-item, .query-language-option,.panEdit-query-language-option,.rows-number-option, .panEdit-rows-number-option, .source-option {
+.index-dropdown-item,.alert-dropdown-item, .query-language-option,.panEdit-query-language-option, .source-option {
     width: 241px;
     background: var(--index-drop-down-item-inactive-bg-color);
     color: var(--index-drop-down-item-inactive-text-color);
@@ -1729,7 +1729,7 @@ div.dts div.dataTables_scrollBody table {
     border-radius: 4px;
 }
 
-.rows-number-option, .panEdit-rows-number-option:hover{
+.rows-number-option, .panEdit-rows-number-option{
     width: 37.5px;
     background: var(--index-drop-down-item-inactive-bg-color);
     color: var(--index-drop-down-item-inactive-text-color);

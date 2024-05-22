@@ -39,6 +39,10 @@ function setupEventHandlers() {
     $('#query-language-btn').on('hide.bs.dropdown', qLangOnHideHandler);
     $('#query-language-options .query-language-option').on('click', setQueryLangHandler);
 
+    $('#rows-number-btn').on('show.bs.dropdown', rowsNumberOnShowHandler);
+    $('#rows-number-btn').on('hide.bs.dropdown', rowsNumberOnHideHandler);
+    $('#rows-number-options .rows-number-option').on('click', setRowsNumberHandler);
+
     $('#index-btn').on('show.bs.dropdown', indexOnShowHandler);
     $('#index-btn').on('hide.bs.dropdown', indexOnHideHandler);
     $('#available-indexes').on('click', '.index-dropdown-item', indexOnSelectHandler);
@@ -74,6 +78,20 @@ function setupEventHandlers() {
     $(window).bind('popstate', windowPopStateHandler);
 }
 
+
+function rowsNumberOnShowHandler() {
+    $('#rows-number-btn').addClass('active');
+}
+
+function rowsNumberOnHideHandler() {
+    $('#rows-number-btn').removeClass('active');
+}
+
+function setRowsNumberHandler(e) {
+    $('#rows-number-options .rows-number-option').removeClass('active');
+    $(this).addClass('active');
+    $('#rows-number-btn-text').html($(this).html());
+}
 
 function windowPopStateHandler(evt) {
     if(location.href.includes("index.html")){
@@ -167,23 +185,7 @@ function customRangeHandler(evt){
                 currentPanel.queryData.endEpoch = filterEndDate
             }
         }
-    } else if($(`#viewPanel-container`).css('display').toLowerCase() !== 'none') {
-            // if user is on view panel screen
-            // get panel-index by attribute
-            let panelIndex = ($(`#viewPanel-container .panel`).attr('panel-index'));
-            // if panel has some stored query data, reset it
-            if(localPanels[panelIndex].queryData) {
-                delete localPanels[panelIndex].queryRes
-                if(localPanels[panelIndex].chartType === "Line Chart" || localPanels[panelIndex].queryType === "metrics") {
-                    localPanels[panelIndex].queryData.start = filterStartDate.toString();
-                    localPanels[panelIndex].queryData.end = filterEndDate.toString();
-                } else {
-                        localPanels[panelIndex].queryData.startEpoch = filterStartDate
-                        localPanels[panelIndex].queryData.endEpoch = filterEndDate
-                        }
-                }
-            displayPanelView(panelIndex);
-    } else if(!currentPanel) {     
+    }else if(!currentPanel) {     
             // if user is on dashboard screen
             localPanels.forEach(panel => {
                 delete panel.queryRes
@@ -210,7 +212,7 @@ function rangeItemHandler(evt){
     datePickerHandler($(this).attr('id'), "now", $(this).attr('id'))
 }
     
-function dashboardRangeItemHandler(evt){
+async function dashboardRangeItemHandler(evt){
     resetCustomDateRange();
     $.each($(".db-range-item.active"), function () {
         $(this).removeClass('active');
@@ -228,24 +230,9 @@ function dashboardRangeItemHandler(evt){
                 currentPanel.queryData.startEpoch = filterStartDate
                 currentPanel.queryData.endEpoch = filterEndDate
             }
+            runQueryBtnHandler();
         }
-    } else if($(`#viewPanel-container`).css('display').toLowerCase() !== 'none') {
-            // if user is on view panel screen
-            // get panel-index by attribute
-            let panelIndex = ($(`#viewPanel-container .panel`).attr('panel-index'));
-            // if panel has some stored query data, reset it
-            if(localPanels[panelIndex].queryData) {
-                delete localPanels[panelIndex].queryRes
-                if(localPanels[panelIndex].chartType === "Line Chart" || localPanels[panelIndex].queryType === "metrics") {
-                    localPanels[panelIndex].queryData.start = filterStartDate.toString();
-                    localPanels[panelIndex].queryData.end = filterEndDate.toString();
-                } else {
-                        localPanels[panelIndex].queryData.startEpoch = filterStartDate
-                        localPanels[panelIndex].queryData.endEpoch = filterEndDate
-                        }
-                }
-            displayPanelView(panelIndex)
-    } else if(!currentPanel) {       
+    }else if(!currentPanel) {       
             // if user is on dashboard screen
             localPanels.forEach(panel => {
                 delete panel.queryRes
@@ -261,6 +248,7 @@ function dashboardRangeItemHandler(evt){
             })
             
         displayPanels();
+        await updateDashboard();
     }
 }
 function resetCustomDateRange(){
@@ -308,6 +296,21 @@ function qLangOnShowHandler() {
 
 function qLangOnHideHandler() {
     $('#query-language-btn').removeClass('active');
+}
+
+// New functions for handling rows number dropdown
+function rowsNumberOnShowHandler() {
+    $('#rows-number-btn').addClass('active');
+}
+
+function rowsNumberOnHideHandler() {
+    $('#rows-number-btn').removeClass('active');
+}
+
+function setRowsNumberHandler(e) {
+    $('#rows-number-options .rows-number-option').removeClass('active');
+    $(this).addClass('active');
+    $('#rows-number-btn span').html($(this).html());
 }
 
 function indexOnShowHandler(){

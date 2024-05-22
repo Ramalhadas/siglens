@@ -24,9 +24,9 @@ let cellEditingClass = '';
 class ReadOnlyCellEditor {
     // gets called once before the renderer is used
     init(params) {
-      // create the cell
+        // create the cell
         this.eInput = document.createElement('textarea');
-        cellEditingClass = params.rowIndex%2===0 ? 'even-popup-textarea' : 'odd-popup-textarea'
+        cellEditingClass = params.rowIndex % 2 === 0 ? 'even-popup-textarea' : 'odd-popup-textarea'
         this.eInput.classList.add(cellEditingClass);
         this.eInput.readOnly = true;
 
@@ -50,39 +50,39 @@ class ReadOnlyCellEditor {
     // returns the new value after editing
     getValue() {
         return this.eInput.value;
-    }   
+    }
     isPopup() {
         return true
     }
     refresh(params) {
         return true;
-      }
+    }
     destroy() {
         this.eInput.classList.remove(cellEditingClass);
     }
-  }
+}
 
 const cellEditorParams = (params) => {
-    const jsonLog = JSON.stringify(JSON.unflatten(params.data), null, 2) 
+    const jsonLog = JSON.stringify(JSON.unflatten(params.data), null, 2)
     return {
-        value :jsonLog,
+        value: jsonLog,
         cols: 100,
         rows: 10
     };
-  };
+};
 // initial columns
 let logsColumnDefs = [
     {
         field: "timestamp",
         headerName: "timestamp",
-        editable: true, 
+        editable: true,
         cellEditor: ReadOnlyCellEditor,
         cellEditorPopup: true,
         cellEditorPopupPosition: 'under',
         cellRenderer: (params) => {
             return moment(params.value).format(timestampDateFmt);
         },
-        cellEditorParams:cellEditorParams,
+        cellEditorParams: cellEditorParams,
         maxWidth: 216,
         minWidth: 216,
     },
@@ -93,15 +93,15 @@ let logsColumnDefs = [
         cellRenderer: (params) => {
             let logString = '';
             let counter = 0;
-            if (updatedSelFieldList){
+            if (updatedSelFieldList) {
                 selectedFieldsList = _.intersection(selectedFieldsList, availColNames);
-            }else{
+            } else {
                 selectedFieldsList = _.union(selectedFieldsList, availColNames);
             }
 
             if (selectedFieldsList.length != 0) {
                 availColNames.forEach((colName, index) => {
-                    if(selectedFieldsList.includes(colName)){
+                    if (selectedFieldsList.includes(colName)) {
                         $(`.toggle-${string2Hex(colName)}`).addClass('active');
                     } else {
                         $(`.toggle-${string2Hex(colName)}`).removeClass('active');
@@ -117,11 +117,11 @@ let logsColumnDefs = [
             _.forEach(params.data, (value, key) => {
                 let colSep = counter > 0 ? '<span class="col-sep"> | </span>' : '';
                 if (key != 'logs' && selectedFieldsList.includes(key)) {
-                    logString += `<span class="cname-hide-${string2Hex(key)}">${colSep}${key}=`+ JSON.stringify(JSON.unflatten(value), null, 2)+`</span>`;                    
+                    logString += `<span class="cname-hide-${string2Hex(key)}">${colSep}${key}=` + JSON.stringify(JSON.unflatten(value), null, 2) + `</span>`;
 
                     counter++;
                 }
-                if (key === 'timestamp'){
+                if (key === 'timestamp') {
                     logString += `<span class="cname-hide-${string2Hex(key)}">${colSep}${key}=${value}</span>`;
                 }
             });
@@ -134,14 +134,14 @@ let logsColumnDefs = [
 let logsRowData = [];
 let allLiveTailColumns = [];
 let total_liveTail_searched = 0;
- // let the grid know which columns and what data to use
+// let the grid know which columns and what data to use
 const gridOptions = {
     columnDefs: logsColumnDefs,
     rowData: logsRowData,
     animateRows: true,
     readOnlyEdit: true,
     singleClickEdit: true,
-    headerHeight:32,
+    headerHeight: 32,
     defaultColDef: {
         initialWidth: 100,
         sortable: true,
@@ -150,37 +150,16 @@ const gridOptions = {
         icons: {
             sortAscending: '<i class="fa fa-sort-alpha-down"/>',
             sortDescending: '<i class="fa fa-sort-alpha-up"/>',
-          },
+        },
     },
     icons: {
         sortAscending: '<i class="fa fa-sort-alpha-down"/>',
         sortDescending: '<i class="fa fa-sort-alpha-up"/>',
-      },
+    },
     enableCellTextSelection: true,
     suppressScrollOnNewData: true,
     suppressAnimationFrame: true,
     suppressFieldDotNotation: true,
-    onBodyScroll(evt){
-        if(evt.direction === 'vertical' && canScrollMore == true){
-            let diff = logsRowData.length - evt.api.getLastDisplayedRow();
-            // if we're less than 1 items from the end...fetch more data
-            if(diff <= 5) {
-                // Show loading indicator
-                showLoadingIndicator();
-                
-                let scrollingTrigger = true;
-                data = getSearchFilter(false, scrollingTrigger);
-                if (data && data.searchText == "error") {
-                  alert("Error");
-                  hideLoadingIndicator(); // Hide loading indicator on error
-                  return;
-                }
-                doSearch(data).then(() => {
-                    hideLoadingIndicator(); // Hide loading indicator once data is fetched
-                });
-            }
-        }
-    },
     overlayLoadingTemplate: '<div class="ag-overlay-loading-center"><div class="loading-icon"></div><div class="loading-text">Loading...</div></div>',
 };
 
@@ -192,15 +171,15 @@ function hideLoadingIndicator() {
     gridOptions.api.hideOverlay();
 }
 
-const myCellRenderer= (params) => {
+const myCellRenderer = (params) => {
     let logString = '';
-    if (typeof params.data === 'object' && params.data !== null){
+    if (typeof params.data === 'object' && params.data !== null) {
         let value = params.data[params.colName]
-        if (value !== ""){
-            if (Array.isArray(value)){
-                logString= JSON.stringify(JSON.unflatten(value), null, 2)
-            }else{
-                logString= value
+        if (value !== "") {
+            if (Array.isArray(value)) {
+                logString = JSON.stringify(JSON.unflatten(value), null, 2)
+            } else {
+                logString = value
             }
         }
     }
@@ -209,13 +188,13 @@ const myCellRenderer= (params) => {
 
 let gridDiv = null;
 
-function renderLogsGrid(columnOrder, hits){
+function renderLogsGrid(columnOrder, hits, rowsPerPage) {
     if (sortByTimestampAtDefault) {
         logsColumnDefs[0].sort = "desc";
-    }else {
+    } else {
         logsColumnDefs[0].sort = undefined;
     }
-    if (gridDiv == null){
+    if (gridDiv == null) {
         gridDiv = document.querySelector('#LogResultsGrid');
         new agGrid.Grid(gridDiv, gridOptions);
     }
@@ -227,36 +206,41 @@ function renderLogsGrid(columnOrder, hits){
         if (index >= defaultColumnCount) {
             hideCol = true;
         }
-       
-        if (logview != 'single-line' && colName == 'logs'){
+
+        if (logview != 'single-line' && colName == 'logs') {
             hideCol = true;
         }
 
         if (index > 1) {
-            if (selectedFieldsList.indexOf(colName) != -1){
+            if (selectedFieldsList.indexOf(colName) != -1) {
                 hideCol = true;
-            } else{
+            } else {
                 hideCol = false;
             }
         }
-        return {
-            field: colName,
-            hide: hideCol,
-            headerName: colName,
-            cellRenderer: myCellRenderer,
-            cellRendererParams : {
-                colName: colName
-             }
-        };
-    });
-    if(hits.length != 0){
-        logsRowData = _.concat(hits, logsRowData);
-        if (liveTailState && logsRowData.length > 500){
-            logsRowData = logsRowData.slice(0, 500);
+        if (colName === "timestamp") {
+            return {
+                field: colName,
+                hide: hideCol,
+                headerName: colName,
+                cellRenderer: function (params) {
+                    return moment(params.value).format(timestampDateFmt);
+                }
+            }
+        } else {
+            return {
+                field: colName,
+                hide: hideCol,
+                headerName: colName,
+                cellRenderer: myCellRenderer,
+                cellRendererParams: { colName: colName }
+            };
         }
-            
-    }
-    logsColumnDefs = _.chain(logsColumnDefs).concat(cols).uniqBy('field').value();
+    });
+
+    logsRowData = hits; // Ensure we only use the hits for the current page
+
+    logsColumnDefs = cols;
     gridOptions.api.setColumnDefs(logsColumnDefs);
 
     const allColumnIds = [];
@@ -265,8 +249,15 @@ function renderLogsGrid(columnOrder, hits){
     });
     gridOptions.columnApi.autoSizeColumns(allColumnIds, false);
     gridOptions.api.setRowData(logsRowData);
-    
-    switch (logview){
+
+    // Enable or disable scroll event handler based on rowsPerPage
+    if (rowsPerPage === "ALL") {
+        gridOptions.api.addEventListener('bodyScroll', onBodyScrollHandler);
+    } else {
+        gridOptions.api.removeEventListener('bodyScroll', onBodyScrollHandler);
+    }
+
+    switch (logview) {
         case 'single-line':
             logOptionSingleHandler();
             break;
@@ -276,6 +267,28 @@ function renderLogsGrid(columnOrder, hits){
         case 'table':
             logOptionTableHandler();
             break;
+    }
+}
+
+function onBodyScrollHandler(evt) {
+    if (evt.direction === 'vertical' && canScrollMore == true) {
+        let diff = logsRowData.length - evt.api.getLastDisplayedRow();
+        // if we're less than 1 items from the end...fetch more data
+        if (diff <= 5) {
+            // Show loading indicator
+            showLoadingIndicator();
+
+            let scrollingTrigger = true;
+            data = getSearchFilter(false, scrollingTrigger);
+            if (data && data.searchText == "error") {
+                alert("Error");
+                hideLoadingIndicator(); // Hide loading indicator on error
+                return;
+            }
+            doSearch(data).then(() => {
+                hideLoadingIndicator(); // Hide loading indicator once data is fetched
+            });
+        }
     }
 }
 
@@ -299,7 +312,7 @@ function updateColumns() {
     gridOptions.api.sizeColumnsToFit();
 }
 
-function getLogView(){
+function getLogView() {
     let logview = Cookies.get('log-view') || 'table';
     return logview
 }
