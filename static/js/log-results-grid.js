@@ -57,11 +57,11 @@ class ReadOnlyCellEditor {
     }
     refresh(params) {
         return true;
-      }
+    }
     destroy() {
         this.eInput.classList.remove(cellEditingClass);
     }
-  }
+}
 
 const cellEditorParams = (params) => {
     const jsonLog = JSON.stringify(JSON.unflatten(params.data), null, 2) 
@@ -70,7 +70,7 @@ const cellEditorParams = (params) => {
         cols: 100,
         rows: 10
     };
-  };
+};
 // initial columns
 let logsColumnDefs = [
     {
@@ -135,7 +135,7 @@ let logsColumnDefs = [
 let logsRowData = [];
 let allLiveTailColumns = [];
 let total_liveTail_searched = 0;
- // let the grid know which columns and what data to use
+// let the grid know which columns and what data to use
 const gridOptions = {
     columnDefs: logsColumnDefs,
     rowData: logsRowData,
@@ -151,31 +151,31 @@ const gridOptions = {
         icons: {
             sortAscending: '<i class="fa fa-sort-alpha-down"/>',
             sortDescending: '<i class="fa fa-sort-alpha-up"/>',
-          },
+        },
     },
     icons: {
         sortAscending: '<i class="fa fa-sort-alpha-down"/>',
         sortDescending: '<i class="fa fa-sort-alpha-up"/>',
-      },
+    },
     enableCellTextSelection: true,
     suppressScrollOnNewData: true,
     suppressAnimationFrame: true,
     suppressFieldDotNotation: true,
-    onBodyScroll(evt){
-        if(evt.direction === 'vertical' && canScrollMore && !isFetching) {
+    onBodyScroll(evt) {
+        if (autoLoadEnabled && evt.direction === 'vertical' && canScrollMore && !isFetching) {
             let diff = logsRowData.length - evt.api.getLastDisplayedRow();
             // if we're less than 5 items from the end...fetch more data
-            if(diff <= 5) {
+            if (diff <= 5) {
                 isFetching = true;
                 showLoadingIndicator();
 
                 let scrollingTrigger = true;
                 data = getSearchFilter(false, scrollingTrigger);
                 if (data && data.searchText == "error") {
-                  alert("Error");
-                  hideLoadingIndicator(); // Hide loading indicator on error
-                  isFetching = false;
-                  return;
+                    alert("Error");
+                    hideLoadingIndicator(); // Hide loading indicator on error
+                    isFetching = false;
+                    return;
                 }
 
                 doSearch(data)
@@ -204,15 +204,15 @@ function hideLoadingIndicator() {
     gridOptions.api.hideOverlay();
 }
 
-const myCellRenderer= (params) => {
+const myCellRenderer = (params) => {
     let logString = '';
-    if (typeof params.data === 'object' && params.data !== null){
-        let value = params.data[params.colName]
-        if (value !== ""){
-            if (Array.isArray(value)){
-                logString= JSON.stringify(JSON.unflatten(value), null, 2)
-            }else{
-                logString= value
+    if (typeof params.data === 'object' && params.data !== null) {
+        let value = params.data[params.colName];
+        if (value !== "") {
+            if (Array.isArray(value)) {
+                logString = JSON.stringify(JSON.unflatten(value), null, 2);
+            } else {
+                logString = value;
             }
         }
     }
@@ -224,10 +224,10 @@ let gridDiv = null;
 function renderLogsGrid(columnOrder, hits){
     if (sortByTimestampAtDefault) {
         logsColumnDefs[0].sort = "desc";
-    }else {
+    } else {
         logsColumnDefs[0].sort = undefined;
     }
-    if (gridDiv == null){
+    if (gridDiv == null) {
         gridDiv = document.querySelector('#LogResultsGrid');
         new agGrid.Grid(gridDiv, gridOptions);
     }
@@ -240,18 +240,18 @@ function renderLogsGrid(columnOrder, hits){
             hideCol = true;
         }
        
-        if (logview != 'single-line' && colName == 'logs'){
+        if (logview != 'single-line' && colName == 'logs') {
             hideCol = true;
         }
 
         if (index > 1) {
-            if (selectedFieldsList.indexOf(colName) != -1){
+            if (selectedFieldsList.indexOf(colName) != -1) {
                 hideCol = true;
-            } else{
+            } else {
                 hideCol = false;
             }
         }
-        if (colName === "timestamp"){
+        if (colName === "timestamp") {
             return {
                 field: colName,
                 hide: hideCol,
@@ -260,7 +260,7 @@ function renderLogsGrid(columnOrder, hits){
                         return moment(params.value).format(timestampDateFmt);
                     }
             }
-        }else{
+        } else {
             return {
                 field: colName,
                 hide: hideCol,
@@ -270,6 +270,7 @@ function renderLogsGrid(columnOrder, hits){
             };
         }
     });
+
     if (hits.length !== 0) {
         // Map hits objects to match the order of columnsOrder
         const mappedHits = hits.map(hit => {
@@ -282,17 +283,24 @@ function renderLogsGrid(columnOrder, hits){
             });
             return reorderedHit;
         });
-    
+
         logsRowData = mappedHits.concat(logsRowData);
 
-        if (liveTailState && logsRowData.length > 500){
+        // Limit number of logs displayed per page
+        if (rowsPerPage !== 'ALL') {
+            const currentSlice = mappedHits;
+            logsRowData = currentSlice;
+        }
+
+        if (liveTailState && logsRowData.length > 500) {
             logsRowData = logsRowData.slice(0, 500);
         }
-            
+
     }
 
+
     const logsColumnDefsMap = new Map(logsColumnDefs.map(logCol => [logCol.field, logCol]));
-     // Use column def from logsColumnDefsMap if it exists, otherwise use the original column def from cols
+    // Use column def from logsColumnDefsMap if it exists, otherwise use the original column def from cols
     const combinedColumnDefs = cols.map(col => logsColumnDefsMap.get(col.field) || col);
     // Append any remaining column def from logsColumnDefs that were not in cols
     logsColumnDefs.forEach(logCol => {
@@ -310,7 +318,7 @@ function renderLogsGrid(columnOrder, hits){
     gridOptions.columnApi.autoSizeColumns(allColumnIds, false);
     gridOptions.api.setRowData(logsRowData);
     
-    switch (logview){
+    switch (logview) {
         case 'single-line':
             logOptionSingleHandler();
             break;
@@ -343,7 +351,7 @@ function updateColumns() {
     gridOptions.api.sizeColumnsToFit();
 }
 
-function getLogView(){
+function getLogView() {
     let logview = Cookies.get('log-view') || 'table';
     return logview
 }

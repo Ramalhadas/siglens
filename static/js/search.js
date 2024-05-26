@@ -64,125 +64,177 @@
          resetAvailableFields();
      }
  }
- 
- let doSearchCounter = 0;
- function doSearch(data) {
-     return new Promise((resolve, reject) => {
-         startQueryTime = (new Date()).getTime();
-         newUri = wsURL("/api/search/ws");
-         socket = new WebSocket(newUri);
-         let timeToFirstByte = 0;
-         let firstQUpdate = true;
-         let lastKnownHits = 0;
-         let errorMessages = [];
-         const timerName = `socket timing ${doSearchCounter}`;
-         doSearchCounter++;
-         console.time(timerName);
 
-         socket.onopen = function (e) {
-             $('body').css('cursor', 'progress');
-             $("#run-filter-btn").addClass("cancel-search");
-             $('#run-filter-btn').addClass('active');
-             $("#query-builder-btn").html("   ");
-             $("#query-builder-btn").addClass("cancel-search");
-             $("#query-builder-btn").addClass("active");
+let currentPage = 0;
+let rowsPerPage = 'ALL';
+let totalPages = 0;
+let autoLoadEnabled = true;
+let previousfilterValue = "*";
 
-             try {
-                 socket.send(JSON.stringify(data));
-             } catch (e) {
-                 reject(`Error sending message to server: ${e}`);
-                 console.timeEnd(timerName);
-                 return
-             }
-         };
+$('#prev-page-btn').on('click', function () {
+  if (currentPage > 0) {
+      currentPage--;
+      data.from = currentPage * (rowsPerPage === 'ALL' ? 0 : rowsPerPage);
+      doSearch(data, currentPage, rowsPerPage);
+  }
+});
 
-         socket.onmessage = function (event) {
-             let jsonEvent = JSON.parse(event.data);
-             let eventType = jsonEvent.state;
-             let totalEventsSearched = jsonEvent.total_events_searched
-             let totalTime = (new Date()).getTime() - startQueryTime;
-             switch (eventType) {
-                 case "RUNNING":
-                     break;
-                 case "QUERY_UPDATE":
-                     console.time("QUERY_UPDATE");
-                     if (timeToFirstByte === 0) {
-                         timeToFirstByte = Number(totalTime).toLocaleString();
-                     }
-                     let totalHits;
+$('#next-page-btn').on('click', function () {
+  if (currentPage < totalPages - 1) {
+      currentPage++;
+      data.from = currentPage * (rowsPerPage === 'ALL' ? 0 : rowsPerPage);
+      doSearch(data, currentPage, rowsPerPage);
+  }
+});
 
-                     if (jsonEvent && jsonEvent.hits && jsonEvent.hits.totalMatched) {
-                         totalHits = jsonEvent.hits.totalMatched
-                         totalMatchLogs = totalHits;
-                         lastKnownHits = totalHits;
-                     } else {
-                         // we enter here only because backend sent null hits/totalmatched
-                         totalHits = lastKnownHits
-                     }
-                     resetDataTable(firstQUpdate);
-                     processQueryUpdate(jsonEvent, eventType, totalEventsSearched, timeToFirstByte, totalHits);
-                     console.timeEnd("QUERY_UPDATE");
-                     firstQUpdate = false
-                     break;
-                 case "COMPLETE":
-                     let eqRel = "eq";
-                     if (jsonEvent.totalMatched != null && jsonEvent.totalMatched.relation != null) {
-                         eqRel = jsonEvent.totalMatched.relation;
-                     }
-                     console.time("COMPLETE");
-                     canScrollMore = jsonEvent.can_scroll_more;
-                     scrollFrom = jsonEvent.total_rrc_count;
-                     processCompleteUpdate(jsonEvent, eventType, totalEventsSearched, timeToFirstByte, eqRel);
-                     console.timeEnd("COMPLETE");
-                     socket.close(1000);
-                     break;
-                 case "TIMEOUT":
-                     console.time("TIMEOUT");
-                     console.log(`[message] Timeout state received from server: ${jsonEvent}`);
-                     processTimeoutUpdate(jsonEvent);
-                     console.timeEnd("TIMEOUT");
-                     errorMessages.push(`Timeout: ${jsonEvent}`);
-                     break;
-                 case "ERROR":
-                     console.time("ERROR");
-                     console.log(`[message] Error state received from server: ${jsonEvent}`);
-                     processErrorUpdate(jsonEvent);
-                     console.timeEnd("ERROR");
-                     errorMessages.push(`Error: ${jsonEvent}`);
-                     break;
-                 default:
-                     console.log(`[message] Unknown state received from server: `+ JSON.stringify(jsonEvent));
-                     if (jsonEvent.message.includes("expected")){
-                        jsonEvent.message = "Your query contains syntax error"
-                     } else if (jsonEvent.message.includes("not present")){
-                        jsonEvent['no_data_err'] = "No data found for the query"
-                     }
-                     processSearchErrorLog(jsonEvent);
-                     errorMessages.push(`Unknown state: ${jsonEvent}`);
-             }
-         };
+$('#rows-number-options li').on('click', function () {
+  rowsPerPage = $(this).text() === 'ALL' ? 'ALL' : parseInt($(this).text());
+  currentPage = 0;
+  data.from = 0;
+  data.size = rowsPerPage;
+  autoLoadEnabled = rowsPerPage === 'ALL';
+  doSearch(data, currentPage, rowsPerPage);
+});
 
-         socket.onclose = function (event) {
-             if (event.wasClean) {
-                 console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
-             } else {
-                 console.log(`Connection close not clean=${event} code=${event.code} reason=${event.reason} `);
-                 errorMessages.push(`Connection close not clean=${event} code=${event.code} reason=${event.reason}`);
-             }
+function updatePaginationControls(currentPage, totalPages) {
+    $('#page-number').text(`Page ${currentPage + 1} of ${totalPages}`);
+    $('#prev-page-btn').prop('disabled', currentPage <= 0);
+    $('#next-page-btn').prop('disabled', currentPage >= totalPages - 1);
+}
 
-             if (errorMessages.length === 0) {
-                 resolve();
-             } else {
-                 reject(errorMessages);
-             }
-             console.timeEnd(timerName);
-         };
+let doSearchCounter = 0;
+function doSearch(data, pageNumber = 0, rowsPerPage = 'ALL') {
+  return new Promise((resolve, reject) => {
+      startQueryTime = (new Date()).getTime();
+      newUri = wsURL("/api/search/ws");
+      socket = new WebSocket(newUri);
+      let timeToFirstByte = 0;
+      let firstQUpdate = true;
+      let lastKnownHits = 0;
+      let errorMessages = [];
+      const timerName = `socket timing ${doSearchCounter}`;
+      doSearchCounter++;
+      console.time(timerName);
 
-         socket.addEventListener('error', (event) => {
-             errorMessages.push(`WebSocket error: ${event}`);
-         });
-     });
- }
+      socket.onopen = function (e) {
+          $('body').css('cursor', 'progress');
+          $("#run-filter-btn").addClass("cancel-search");
+          $('#run-filter-btn').addClass('active');
+          $("#query-builder-btn").html(" ");
+          $("#query-builder-btn").addClass("cancel-search");
+          $("#query-builder-btn").addClass("active");
+
+          try {
+              socket.send(JSON.stringify(data));
+          } catch (e) {
+              reject(`Error sending message to server: ${e}`);
+              console.timeEnd(timerName);
+              return;
+          }
+      };
+
+      socket.onmessage = function (event) {
+          let jsonEvent = JSON.parse(event.data);
+          let eventType = jsonEvent.state;
+          let totalEventsSearched = jsonEvent.total_events_searched;
+          let totalTime = (new Date()).getTime() - startQueryTime;
+          switch (eventType) {
+              case "RUNNING":
+                  break;
+              case "QUERY_UPDATE":
+                  console.time("QUERY_UPDATE");
+                  if (timeToFirstByte === 0) {
+                      timeToFirstByte = Number(totalTime).toLocaleString();
+                  }
+                  let totalHits;
+
+                  if (jsonEvent && jsonEvent.hits && jsonEvent.hits.totalMatched) {
+                    
+                      totalHits = jsonEvent.hits.totalMatched;
+                      totalMatchLogs = totalHits;
+                      lastKnownHits = totalHits;
+                  } else {
+                      totalHits = lastKnownHits;
+                  }
+
+                  resetDataTable(firstQUpdate);
+                  processQueryUpdate(jsonEvent, eventType, totalEventsSearched, timeToFirstByte, totalHits);
+                  if (rowsPerPage !== 'ALL') {
+                      totalPages = Math.ceil(totalHits / rowsPerPage);
+                      updatePaginationControls(pageNumber, totalPages);
+                  }else{
+                    $('#page-number').text(`Page 1 of 1`);
+                    $('#prev-page-btn').prop('disabled', true);
+                    $('#next-page-btn').prop('disabled', true);
+                    let filterValue = data.searchText;
+                    if(filterValue === "*"){
+                      rowsPerPage = 'ALL';
+                      currentPage = 0;
+                      autoLoadEnabled = true;
+                    }
+                  }
+                  console.timeEnd("QUERY_UPDATE");
+                  firstQUpdate = false;
+                  break;
+              case "COMPLETE":
+                  let eqRel = "eq";
+                  if (jsonEvent.totalMatched != null && jsonEvent.totalMatched.relation != null) {
+                      eqRel = jsonEvent.totalMatched.relation;
+                  }
+                  console.time("COMPLETE");
+                  canScrollMore = jsonEvent.can_scroll_more;
+                  scrollFrom = jsonEvent.total_rrc_count;
+                  processCompleteUpdate(jsonEvent, eventType, totalEventsSearched, timeToFirstByte, eqRel);
+                  console.timeEnd("COMPLETE");
+                  socket.close(1000);
+                  break;
+              case "TIMEOUT":
+                  console.time("TIMEOUT");
+                  console.log(`[message] Timeout state received from server: ${jsonEvent}`);
+                  processTimeoutUpdate(jsonEvent);
+                  console.timeEnd("TIMEOUT");
+                  errorMessages.push(`Timeout: ${jsonEvent}`);
+                  break;
+              case "ERROR":
+                  console.time("ERROR");
+                  console.log(`[message] Error state received from server: ${jsonEvent}`);
+                  processErrorUpdate(jsonEvent);
+                  console.timeEnd("ERROR");
+                  errorMessages.push(`Error: ${jsonEvent}`);
+                  break;
+              default:
+                  console.log(`[message] Unknown state received from server: `+ JSON.stringify(jsonEvent));
+                  if (jsonEvent.message.includes("expected")){
+                     jsonEvent.message = "Your query contains syntax error";
+                  } else if (jsonEvent.message.includes("not present")){
+                     jsonEvent['no_data_err'] = "No data found for the query";
+                  }
+                  processSearchErrorLog(jsonEvent);
+                  errorMessages.push(`Unknown state: ${jsonEvent}`);
+          }
+      };
+
+      socket.onclose = function (event) {
+          if (event.wasClean) {
+              console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+          } else {
+              console.log(`[close] Connection closed not cleanly, code=${event.code} reason=${event.reason}`);
+              errorMessages.push(`Connection closed not cleanly, code=${event.code} reason=${event.reason}`);
+          }
+
+          if (errorMessages.length === 0) {
+              resolve();
+          } else {
+              reject(errorMessages);
+          }
+          console.timeEnd(timerName);
+      };
+
+      socket.addEventListener('error', (event) => {
+          errorMessages.push(`WebSocket error: ${event}`);
+      });
+  });
+}
  
   function reconnect() {
     if (lockReconnect) {
@@ -343,136 +395,144 @@
        console.log("WebSocket error: ", event);
      });
    }
- function getInitialSearchFilter(skipPushState, scrollingTrigger) {
-     let queryParams = new URLSearchParams(window.location.search);
-     let stDate = queryParams.get("startEpoch") || Cookies.get('startEpoch') || "now-15m";
-     let endDate = queryParams.get("endEpoch") || Cookies.get('endEpoch') || "now";
-     let selIndexName = queryParams.get('indexName');
-     let queryLanguage = queryParams.get("queryLanguage") ||$('#query-language-btn span').html();
-     queryLanguage = queryLanguage.replace('"', '');
-     $("#query-language-btn span").html(queryLanguage);
+   function getInitialSearchFilter(skipPushState, scrollingTrigger) {
+    let queryParams = new URLSearchParams(window.location.search);
+    let stDate = queryParams.get("startEpoch") || Cookies.get('startEpoch') || "now-15m";
+    let endDate = queryParams.get("endEpoch") || Cookies.get('endEpoch') || "now";
+    let selIndexName = queryParams.get('indexName');
+    let queryLanguage = queryParams.get("queryLanguage") || $('#query-language-btn span').html();
+    queryLanguage = queryLanguage.replace('"', '');
+    $("#query-language-btn span").html(queryLanguage);
     $(".query-language-option").removeClass("active");
-     if (queryLanguage == "SQL") {
-       $("#option-1").addClass("active");
-     } else if (queryLanguage == "Log QL") {
-       $("#option-2").addClass("active");
-     } else if (queryLanguage == "Splunk QL") {
-       $("#option-3").addClass("active");
-     }
-     let filterTab = queryParams.get("filterTab");
-     let filterValue = queryParams.get('searchText');
-     if(filterTab == "0" || filterTab == null){
-      if(filterValue != "*"){
-        if(filterValue.indexOf("|") != -1){
-          firstBoxSet = new Set(filterValue.split(" | ")[0].split(" "));
-          secondBoxSet = new Set(
-            filterValue
-              .split("stats ")[1]
-              .split(" BY")[0]
-              .split(/(?=[A-Z])/)
-          );
-          if (filterValue.includes(" BY ")) {
-            thirdBoxSet = new Set(filterValue.split(" BY ")[1].split(","));
-          }
+    if (queryLanguage == "SQL") {
+        $("#option-1").addClass("active");
+    } else if (queryLanguage == "Log QL") {
+        $("#option-2").addClass("active");
+    } else if (queryLanguage == "Splunk QL") {
+        $("#option-3").addClass("active");
+    }
+    let filterTab = queryParams.get("filterTab");
+    let filterValue = queryParams.get('searchText');
+    if (filterTab == "0" || filterTab == null) {
+        if (filterValue != "*" && !filterValue.includes(" BY ") && !filterValue.includes("stats")) {
+            $('#pagination-controls').show();
+            $('#rows-number-btn').show();
+            $('#page-number').show();
+            $('#rows-per-page').show();
+            if (filterValue.indexOf("|") != -1) {
+                firstBoxSet = new Set(filterValue.split(" | ")[0].split(" "));
+                secondBoxSet = new Set(
+                    filterValue
+                        .split("stats ")[1]
+                        .split(" BY")[0]
+                        .split(/(?=[A-Z])/)
+                );
+                if (filterValue.includes(" BY ")) {
+                    thirdBoxSet = new Set(filterValue.split(" BY ")[1].split(","));
+                }
+            } else {
+                firstBoxSet = new Set(filterValue.split(" "));
+            }
+            if (firstBoxSet && firstBoxSet.size > 0) {
+                let tags = document.getElementById("tags");
+                while (tags.firstChild) {
+                    tags.removeChild(tags.firstChild);
+                }
+                firstBoxSet.forEach((value, i) => {
+                    let tag = document.createElement("li");
+                    tag.innerText = value;
+                    // Add a delete button to the tag
+                    tag.innerHTML += '<button class="delete-button">x</button>';
+                    // Append the tag to the tags list
+                    tags.appendChild(tag);
+                });
+            }
+            if (secondBoxSet && secondBoxSet.size > 0) {
+                let tags = document.getElementById("tags-second");
+                while (tags.firstChild) {
+                    tags.removeChild(tags.firstChild);
+                }
+                secondBoxSet.forEach((value, i) => {
+                    let tag = document.createElement("li");
+                    tag.innerText = value;
+                    // Add a delete button to the tag
+                    tag.innerHTML += '<button class="delete-button">x</button>';
+                    // Append the tag to the tags list
+                    tags.appendChild(tag);
+                });
+            }
+            if (thirdBoxSet && thirdBoxSet.size > 0) {
+                let tags = document.getElementById("tags-third");
+                while (tags.firstChild) {
+                    tags.removeChild(tags.firstChild);
+                }
+                thirdBoxSet.forEach((value, i) => {
+                    let tag = document.createElement("li");
+                    tag.innerText = value;
+                    // Add a delete button to the tag
+                    tag.innerHTML += '<button class="delete-button">x</button>';
+                    // Append the tag to the tags list
+
+                    tags.appendChild(tag);
+                });
+            }
         }else{
-          firstBoxSet = new Set(filterValue.split(" "));
+          $('#pagination-controls').hide();
+          $('#rows-number-btn').hide();
+          $('#page-number').hide();
+          $('#rows-per-page').hide();
         }
-        if (firstBoxSet && firstBoxSet.size > 0) {
-          let tags = document.getElementById("tags");
-          while (tags.firstChild) {
-            tags.removeChild(tags.firstChild);
-          }
-          firstBoxSet.forEach((value, i) => {
-            let tag = document.createElement("li");
-            tag.innerText = value;
-            // Add a delete button to the tag
-            tag.innerHTML += '<button class="delete-button">x</button>';
-            // Append the tag to the tags list
-            tags.appendChild(tag);
-          });
-        }
-        if (secondBoxSet && secondBoxSet.size > 0) {
-          let tags = document.getElementById("tags-second");
-          while (tags.firstChild) {
-            tags.removeChild(tags.firstChild);
-          }
-          secondBoxSet.forEach((value, i) => {
-            let tag = document.createElement("li");
-            tag.innerText = value;
-            // Add a delete button to the tag
-            tag.innerHTML += '<button class="delete-button">x</button>';
-            // Append the tag to the tags list
-            tags.appendChild(tag);
-          });
-        }
-        if (thirdBoxSet && thirdBoxSet.size > 0) {
-          let tags = document.getElementById("tags-third");
-          while (tags.firstChild) {
-            tags.removeChild(tags.firstChild);
-          }
-          thirdBoxSet.forEach((value, i) => {
-            let tag = document.createElement("li");
-            tag.innerText = value;
-            // Add a delete button to the tag
-            tag.innerHTML += '<button class="delete-button">x</button>';
-            // Append the tag to the tags list
-            
-            tags.appendChild(tag);
-          });
-        }
-      }
         $("#query-input").val(filterValue);
-     }else{
+    } else {
         $("#custom-code-tab").tabs("option", "active", 1);
         if (filterValue === "*") {
-          $("#filter-input").val("").change();
+            $("#filter-input").val("").change();
         } else {
-          $("#filter-input").val(filterValue).change();
+            $("#filter-input").val(filterValue).change();
         }
-     }
-     let sFrom = 0;
+    }
+    let sFrom = 0;
 
-     setIndexDisplayValue(selIndexName);
+    setIndexDisplayValue(selIndexName);
 
-     selectedSearchIndex = selIndexName.split(",").join(",");
-     Cookies.set('IndexList', selIndexName.split(",").join(","));
- 
-     if (!isNaN(stDate)) {
-         stDate = Number(stDate);
-         endDate = Number(endDate);
-         datePickerHandler(stDate, endDate, "custom");
-         loadCustomDateTimeFromEpoch(stDate,endDate);
-     } else if (stDate !== "now-15m") {
-         datePickerHandler(stDate, endDate, stDate);
-     } else {
-         datePickerHandler(stDate, endDate, "");
-     }
+    selectedSearchIndex = selIndexName.split(",").join(",");
+    Cookies.set('IndexList', selIndexName.split(",").join(","));
 
-     selectedSearchIndex = selIndexName;
-     if (!skipPushState) {
-         addQSParm("searchText", filterValue);
-         addQSParm("startEpoch", stDate);
-         addQSParm("endEpoch", endDate);
-         addQSParm("indexName", selIndexName);
-         addQSParm("queryLanguage", queryLanguage);
-         window.history.pushState({ path: myUrl }, '', myUrl);
-     }
- 
-     if (scrollingTrigger){
-         sFrom = scrollFrom;
-     }
+    if (!isNaN(stDate)) {
+        stDate = Number(stDate);
+        endDate = Number(endDate);
+        datePickerHandler(stDate, endDate, "custom");
+        loadCustomDateTimeFromEpoch(stDate, endDate);
+    } else if (stDate !== "now-15m") {
+        datePickerHandler(stDate, endDate, stDate);
+    } else {
+        datePickerHandler(stDate, endDate, "");
+    }
 
+    selectedSearchIndex = selIndexName;
+    if (!skipPushState) {
+        addQSParm("searchText", filterValue);
+        addQSParm("startEpoch", stDate);
+        addQSParm("endEpoch", endDate);
+        addQSParm("indexName", selIndexName);
+        addQSParm("queryLanguage", queryLanguage);
+        window.history.pushState({ path: myUrl }, '', myUrl);
+    }
 
-     return {
-         'state': 'query',
-         'searchText': filterValue,
-         'startEpoch': stDate,
-         'endEpoch': endDate,
-         'indexName': selIndexName,
-         'from' : sFrom,
-         'queryLanguage' : queryLanguage,
-     };
- }
+    if (scrollingTrigger) {
+        sFrom = scrollFrom;
+    }
+
+    return {
+        'state': 'query',
+        'searchText': filterValue,
+        'startEpoch': stDate,
+        'endEpoch': endDate,
+        'indexName': selIndexName,
+        'from': sFrom,
+        'queryLanguage': queryLanguage,
+    };
+}
   function getLiveTailFilter(skipPushState, scrollingTrigger, startTime) {
     let filterValue = $("#filter-input").val().trim() || "*";
     let endDate = "now";
@@ -596,20 +656,32 @@
 
    window.history.pushState({ path: myUrl }, "", myUrl);
 
+   if (filterValue != "*" && !filterValue.includes(" BY ") && !filterValue.includes("stats")){
+    $('#pagination-controls').show();
+    $('#rows-number-btn').show();
+    $('#page-number').show();
+    $('#rows-per-page').show();
+   }else{
+    $('#pagination-controls').hide();
+    $('#rows-number-btn').hide();
+    $('#page-number').hide();
+    $('#rows-per-page').hide();
+   }
+
    if (scrollingTrigger) {
      sFrom = scrollFrom;
    }
 
    filterTextQB = filterValue;
-   return {
-     state: wsState,
-     searchText: filterValue,
-     startEpoch: stDate,
-     endEpoch: endDate,
-     indexName: selIndexName,
-     from: sFrom,
-     queryLanguage: queryLanguage,
-   };
+    return {
+        'state': wsState,
+        'searchText': filterValue,
+        'startEpoch': stDate,
+        'endEpoch': endDate,
+        'indexName': selIndexName,
+        'from': sFrom,
+        'queryLanguage': queryLanguage,
+    };
  }
  
  function getSearchFilterForSave(qname, qdesc) {
@@ -735,8 +807,7 @@
         }
              
          // for sort function display
-         sortByTimestampAtDefault = res.sortByTimestampAtDefault; 
-
+         sortByTimestampAtDefault = res.sortByTimestampAtDefault;
          renderAvailableFields(columnOrder);
          renderLogsGrid(columnOrder, res.hits.records);
 

@@ -304,6 +304,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                     <li class="tab-li" id="tab-chart-title"><a href="#tabs-chart" class="custom-query-builder">Visualization</a>
                     </li>
                 </ul>
+                <div id="rows-per-page">
+                    Rows per page:
+                </div>
+                <div class="dropdown-box-2">
+                    <button class="btn dropdown-toggle" type="button" id="rows-number-btn" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false" data-bs-toggle="dropdown" title="Select Rows Per Page">
+                        <span>ALL</span>
+                        <img class="dropdown-arrow orange" src="assets/arrow-btn.svg">
+                        <img class="dropdown-arrow blue" src="assets/up-arrow-btn-light-theme.svg">
+                    </button>
+                    <div class="dropdown-menu box-shadow" aria-labelledby="index-btn" id="rows-number-options">
+                        <li id="option-1" class="rows-number-option">10</li>
+                        <li id="option-2" class="rows-number-option">25</li>
+                        <li id="option-3" class="rows-number-option">50</li>
+                        <li id="option-4" class="rows-number-option">100</li>
+                        <li id="option-5" class="rows-number-option">200</li>
+                        <li id="option-6" class="rows-number-option active">ALL</li>
+                    </div>
+                </div>
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" class="pagination">
+                    <button id="prev-page-btn" class="prev-page-btn">Previous</button>
+                    <button id="next-page-btn" class="next-page-btn">Next</button>
+                </div>
+                <div id="page-number">
+                    Page 1
+                </div>
                 <div id="logs-view-controls">
                     <div id="save-query-div" class="save-query-div">
                         <button class="btn saveq-btn below-btn-img" id="saveq-btn" title="Save Query"></button>

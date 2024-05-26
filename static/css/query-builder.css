@@ -49,6 +49,20 @@
 #query-language-btn{
     margin-left: 5px;
 }
+#rows-number-btn{
+    margin-left: 5px;
+}
+#pagination-controls{
+    position: absolute;
+    left: 405px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    height: 30px;
+    top: 5px;
+    border-radius: 5px;
+    background-color: var(--myOrg-input);
+}
 #filter-container {
     margin: 0;
     margin-top: 10px;
@@ -397,6 +411,16 @@ input.form-control {
     top: 10px;
 }
 
+.dropdown-box-2{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    position: absolute;
+    top: 5px;
+    left: 335px;
+    width: 80px;
+}
+
 .tab-li {
     height: 34px;
     border-radius: 5px;
@@ -567,10 +591,18 @@ a:visited.ui-button,
     width: 30px;
     border: 1px solid var(--border-btn-color);
 }
+.next-page-btn, .prev-page-btn{
+    background-color: var(--index-drop-down-box-bg-color);
+    height: 30px;
+    border: 1px solid var(--border-btn-color);
+    color: var(--text-color);
+}
 
 .fields{
     margin-left: 10px;
 }
+.next-page-btn:hover,
+.prev-page-btn:hover,
 .below-btn-img:hover,
 .add-con:hover,
 .cancel-enter:hover,
@@ -664,13 +696,37 @@ div.show-record-popup {
     position: absolute;
     background-color: var(--myOrg-input);
 }
-#logs-view-controls {
+#rows-per-page{
     position: absolute;
-    left: 214px;
+    font-size: 17px; 
+    height: 30px;
+    top: 5px;
+    left: 220px;
     display: flex;
     justify-content: space-between;
     flex-direction: row;
-    width: calc(100% - 214px);
+    align-items: center;
+    width: 120px;
+}
+#page-number{
+    position: absolute;
+    font-size: 17px; 
+    height: 20px;
+    top: 5px;
+    left: 520px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    align-items: center;
+    width: 150px;
+}
+#logs-view-controls {
+    position: absolute;
+    left: 500px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    width: calc(100% - 500px);
 }
 #tabs-chart,
 #showTable{

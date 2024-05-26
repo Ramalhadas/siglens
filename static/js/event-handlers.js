@@ -39,6 +39,10 @@ function setupEventHandlers() {
     $('#query-language-btn').on('hide.bs.dropdown', qLangOnHideHandler);
     $('#query-language-options .query-language-option').on('click', setQueryLangHandler);
 
+    $('#rows-number-btn').on('show.bs.dropdown', rowsNumberOnShowHandler);
+    $('#rows-number-btn').on('hide.bs.dropdown', rowsNumberOnHideHandler);
+    $('#rows-number-options .rows-number-option').on('click', setRowsNumberHandler);
+
     $('#index-btn').on('show.bs.dropdown', indexOnShowHandler);
     $('#index-btn').on('hide.bs.dropdown', indexOnHideHandler);
     $('#available-indexes').on('click', '.index-dropdown-item', indexOnSelectHandler);
@@ -74,6 +78,20 @@ function setupEventHandlers() {
     $(window).bind('popstate', windowPopStateHandler);
 }
 
+
+function rowsNumberOnShowHandler() {
+    $('#rows-number-btn').addClass('active');
+}
+
+function rowsNumberOnHideHandler() {
+    $('#rows-number-btn').removeClass('active');
+}
+
+function setRowsNumberHandler(e) {
+    $('#rows-number-options .rows-number-option').removeClass('active');
+    $(this).addClass('active');
+    $('#rows-number-btn-text').html($(this).html());
+}
 
 function windowPopStateHandler(evt) {
     if(location.href.includes("index.html")){
@@ -280,6 +298,21 @@ function qLangOnHideHandler() {
     $('#query-language-btn').removeClass('active');
 }
 
+// New functions for handling rows number dropdown
+function rowsNumberOnShowHandler() {
+    $('#rows-number-btn').addClass('active');
+}
+
+function rowsNumberOnHideHandler() {
+    $('#rows-number-btn').removeClass('active');
+}
+
+function setRowsNumberHandler(e) {
+    $('#rows-number-options .rows-number-option').removeClass('active');
+    $(this).addClass('active');
+    $('#rows-number-btn span').html($(this).html());
+}
+
 function indexOnShowHandler(){
     $('#index-btn').addClass('active');
     if (Cookies.get('IndexList')) {
@@ -358,7 +391,6 @@ function runFilterBtnHandler(evt) {
       $("#run-filter-btn").text() === " " ||
       $("#query-builder-btn").text() === " "
     ) {
-
       resetDashboard();
       logsRowData = [];
       wsState = "query";
@@ -380,6 +412,7 @@ function filterInputHandler(evt) {
       ($("#run-filter-btn").text() === " " ||
         $("#query-builder-btn").text() === " ")
     ) {
+      console.log("HIGGA");
       resetDashboard();
       logsRowData = [];
       data = getSearchFilter(false, false);
